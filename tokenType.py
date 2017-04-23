@@ -1,0 +1,38 @@
+from enum import Enum, auto
+class NoValue(Enum):
+    def __repr__(self):
+        return '<%s.%s>' % (self.__class__.__name__, self.name)
+class TokenType(NoValue):
+    Function            = auto()
+    ParenthOpen         = auto()
+    ParenthClose        = auto()
+    BracketOpen         = auto()
+    BracketClose        = auto()
+    SquareBracketOpen   = auto()
+    SquareBracketClose  = auto()
+    Comma               = auto()
+    Semicolon           = auto()
+    If                  = auto()
+    Else                = auto()
+    Return              = auto()
+    Var                 = auto()
+    String              = auto()
+    Negation            = auto()
+    Assignment          = auto()
+    Or                  = auto()
+    And                 = auto()
+    Equality            = auto()
+    Inequality          = auto()
+    Less                = auto()
+    Greater             = auto()
+    LessOrEqual         = auto()
+    GreaterOrEqual      = auto()
+    Plus                = auto()
+    Dot                 = auto()
+    Identifier          = auto()
+    NumberLiteral       = auto()
+    Invalid             = auto()
+    EndOfFile           = auto()
+    Undefined           = auto()
+    
+    
