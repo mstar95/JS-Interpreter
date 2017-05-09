@@ -36,6 +36,7 @@ class Lexer:
                 buffer += sign
                 sign = self.reader.nextSign()
                 if not str.isdigit(sign):
+                    self.reader.seek()
                     break
             token.type = TokenType.NumberLiteral
             token.value = buffer

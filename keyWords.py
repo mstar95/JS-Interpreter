@@ -18,5 +18,6 @@ simpleSigns = {
         ',': TokenType.Comma,
         ';': TokenType.Semicolon,
         '+': TokenType.Plus,
+		'-': TokenType.Minus,
         '.': TokenType.Dot
 };

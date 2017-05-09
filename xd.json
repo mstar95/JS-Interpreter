@@ -1,11 +1,7 @@
-var a v c
-b
-csss;
-a
-v
-11111    asaf
-add  saf
-d;
-String;
-'10000';
-'aaaaa
+function fun () 
+{
+   var a = 2 ;
+   return 2 + 2 ;
+}
+
+
