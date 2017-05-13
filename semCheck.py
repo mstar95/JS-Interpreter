@@ -3,34 +3,46 @@ import AST
 class SemCheck:
     def check(self,syntaxTree):
         self.syntaxTree = syntaxTree
-        self.definedFunctions = dict()
-        self.scanFunctionDefinitions()
+        # self.definedFunctions = dict()
+        #self.scanFunctionDefinitions()
         return self.traverseTree()
     def scanFunctionDefinitions(self):
+        print("LEL")
         for functionNode in self.syntaxTree.functions:
+            print("LEL")
             if functionNode.name in self.definedFunctions:
                 raise Exception('Duplicated definition of function')
             self.definedFunctions[functionNode.name] = ir.Function()
             self.definedFunctions[functionNode.name].name =  functionNode.name
                                            
     def traverseTree(self):
-        functions = []
-        for function in self.syntaxTree.functions:
-            functions.append(self.checkFunction(function))
-        return functions
+        #functions = []
+        #for function in self.syntaxTree.functions:
+            #functions.append(self.checkFunction(function))
+        #return functions
+        mainScope = ir.ScopeProto()
+        mainBlock = self.checkBlock(mainScope,self.syntaxTree.mainBlock)
+        return mainBlock
 
     def checkFunction(self,functionDef):
-        function  = self.definedFunctions[functionDef.name]
+        #function = ir, functionDef=ast
+        #function  = self.definedFunctions[functionDef.name]
+        function = ir.Function()
         function.instructions.append(self.checkBlock(function.scopeProto,functionDef.blockNode))
         return function
     def checkBlock(self,scopeProto,blockNode):
         block = ir.Block()
         block.scopeProto.upperScope = scopeProto
+        for function in blockNode.functions:
+             block.scopeProto.addFunction(function.name,self.checkFunction(function))
         for instruction in blockNode.instructions:
+            print("XXX")
             if instruction.getType() == AST.NodeType.VarDeclaration:
                 self.checkVarDeclaration(block.scopeProto, instruction.name)
+                if instruction.assignableNode:
+                    block.instructions.append(self.checkAssignment(block.scopeProto,instruction.name,instruction.assignableNode))
             elif instruction.getType() == AST.NodeType.Assignment:
-                block.instructions.append(self.checkAssignment(block.scopeProto,instruction.variable,instrucion.value))
+                block.instructions.append(self.checkAssignment(block.scopeProto,instruction.variable.name,instruction.value))
             elif instruction.getType() == AST.NodeType.ReturnStatement:
                 block.instructions.append(self.checkReturnStatement(block.scopeProto,instruction.assignableNode))
             elif instruction.getType() == AST.NodeType.Call:
@@ -66,10 +78,10 @@ class SemCheck:
         return None
     
     def checkFunctionCall(self,scopeProto,call):
-        if call.name not in self.definedFunctions:
+        if call.name not in scopeProto.functions:
             raise Exception("Call to undefined function")
             return None
-        functionDef = self.definedFunctions[call.name]
+        functionDef = scopeProto.functions[call.name]
         if len(functionDef.scopeProto.variables) != len(call.arguments):
             raise Exception("invalid args")
             return None
@@ -83,7 +95,9 @@ class SemCheck:
         obj = ir.Expression()
         obj.operations = expression.operations
         for operand in expression.operands:
-            if operand.getType() == AST.NodeType.Expression:
+            if operand.getType() == AST.NodeType.Literal:
+                 obj.operands.append(self.checkLiteral(operand))
+            elif operand.getType() == AST.NodeType.Expression:
                  obj.operands.append(self.checkExpression(scopeProto, operand))
             elif operand.getType() == AST.NodeType.Variable:
                  obj.operands.append(self.checkVariable(scopeProto, operand))
@@ -100,7 +114,7 @@ class SemCheck:
             raise Exception("Usage of empty  variable")
             return None
         obj.name = variable.name
-        obj.value = self.checkAssignable(scopeProto, obj.value)
+        obj.value = self.checkAssignable(scopeProto, variable)
         return obj
     
     def checkReturnStatement(self,scopeProto,assignable):
@@ -127,14 +141,20 @@ class SemCheck:
         obj.operation  = condition.operation
         obj.negated = condition.negated
         for operand in condition.operands:
-            if operand.getType() == AST.NodeType.Condition:
+            if operand.getType() == AST.NodeType.Literal:
+                 obj.operands.append(self.checkLiteral(operand))
+            elif operand.getType() == AST.NodeType.Condition:
                  obj.operands.append(self.checkCondition(scopeProto, operand))
             elif operand.getType() == AST.NodeType.Variable:
                  obj.operands.append(self.checkVariable(scopeProto, operand))
             else:
                 raise Exception("Invalid condition operand")
         return obj
-                            
+    
+    def checkLiteral(self,literal):
+        obj = ir.Literal()
+        obj.data = int(literal.data)
+        return obj
                             
         
     

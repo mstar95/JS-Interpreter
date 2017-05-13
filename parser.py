@@ -17,22 +17,16 @@ class Parser():
     def parse(self):
         self.resetPreviousToken()
         syntaxTree = Program()
-        lastFunction = self.parseFunction()
-        while lastFunction:
-            syntaxTree.addFunction(lastFunction)
-            lastFunction = self.parseFunction()
+        syntaxTree.mainBlock = self.parseStatementBlock(True)
         return syntaxTree
 
     def parseFunction(self):
         node = FunDefinition()
-        tempToken = self.accept({ TokenType.Function, TokenType.EndOfFile })
-        if tempToken.type == TokenType.EndOfFile:
-            return None
+        tempToken = self.accept({ TokenType.Function})
         tempToken = self.accept({ TokenType.Identifier })
         node.setName(tempToken.value)
         node.setParameters(self.parseParameters())
         node.setBlock(self.parseStatementBlock())
-
         return node
     
     def accept(self,acceptable):
@@ -87,13 +81,14 @@ class Parser():
                 parametersNames.append(tempToken.value)
         return parametersNames
     
-    def parseStatementBlock(self):
+    def parseStatementBlock(self,isFirst=False):
         node = StatementBlock()
-        self.accept({ TokenType.BracketOpen })
+        if not isFirst:
+            self.accept({ TokenType.BracketOpen })
         while True:
             if not self.peek({TokenType.If,TokenType.While,TokenType.Return,
                 TokenType.Var,TokenType.BracketOpen,TokenType.Identifier,
-                TokenType.Continue,TokenType.Break}):
+                TokenType.Continue,TokenType.Break,TokenType.Function, TokenType.EndOfFile}):
                 break
             tempToken = self.getPeeked()
 
@@ -111,8 +106,15 @@ class Parser():
                     node.addInstruction(self.parseAssignmentOrFunCall())
             elif tempToken.type == TokenType.Break:
                     node.addInstruction(self.parseLoopJump())
-        
-        self.accept({ TokenType.BracketClose })
+            elif tempToken.type == TokenType.Function:
+                    node.addFunction(self.parseFunction())
+            elif tempToken.type == TokenType.EndOfFile:
+                if isFirst:
+                    return node
+                else:
+                    self.error()
+        if not isFirst:
+            self.accept({ TokenType.BracketClose })
         return node
     
     def parseIfStatement(self):
@@ -171,10 +173,14 @@ class Parser():
     
     def parseAssignmentOrFunCall(self):
         tempToken  = self.accept({ TokenType.Identifier })
-        node = self.parseFunCall({ TokenType.Continue, TokenType.Break })
-        node.setType(token.type)
-        self.accept({ TokenType.Semicolon })
-        
+        node = self.parseFunCall(tempToken.value)
+        if not node:
+            assignmentNode = Assignment()
+            assignmentNode.setVariable(self.parseVariable(tempToken))
+            self.accept({ TokenType.Assignment })
+            assignmentNode.setValue(self.parseAssignable())
+            node = assignmentNode
+        self.accept({ TokenType.Semicolon })   
         return node
     
     def parseLoopJump(self):       
@@ -260,7 +266,7 @@ class Parser():
     def parseVariable(self,identifierToken = Token(TokenType.Undefined)):
         node = Variable()
         if identifierToken.type != TokenType.Identifier:
-            tempToken = self.accept(TokenType.Identifier)
+            tempToken = self.accept({TokenType.Identifier})
             node.setName(tempToken.value)
         else:
             node.setName(identifierToken.value)
@@ -282,16 +288,16 @@ class Parser():
             value *= -1
         return value
     
-    def parseCondition():
+    def parseCondition(self):
         node = Condition()
-        self.addOperand(self.parseAndCondition())
+        node.addOperand(self.parseAndCondition())
 
         while self.peek({ TokenType.Or }):
             self.accept({ TokenType.Or })
             node.setOperator(TokenType.Or)
             node.addOperand(self.parseAndCondition())
         return node
-    def parseAndCondition():
+    def parseAndCondition(self):
         node = Condition()
         node.addOperand(self.parseEqualityCondition())
         
@@ -301,7 +307,7 @@ class Parser():
             node.addOperand(self.parseEqualityCondition())
         return node
     
-    def parseEqualityCondition():
+    def parseEqualityCondition(self):
         node = Condition()
         node.addOperand(self.parseRelationalCondition())
         
@@ -311,7 +317,7 @@ class Parser():
             node.addOperand(self.parseRelationalCondition())
         return node
     
-    def parseRelationalCondition():
+    def parseRelationalCondition(self):
         node = Condition()
         node.addOperand(self.parsePrimaryCondition())
         
@@ -321,7 +327,7 @@ class Parser():
             node.addOperand(self.parsePrimaryCondition())
         return node
     
-    def parsePrimaryCondition():
+    def parsePrimaryCondition(self):
         node = Condition()
         if self.peek({ TokenType.Negation }):
             self.accept({ TokenType.Negation })
@@ -337,7 +343,7 @@ class Parser():
             else:
                  node.addOperand(self.parseLiteral())
         if not node.isNegated():
-            return node.getLeftSide
+            return node.getLeftSide()
         return node
     
     

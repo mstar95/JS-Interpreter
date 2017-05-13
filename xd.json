@@ -1,7 +1,10 @@
 function fun () 
 {
-   var a = 2 ;
-   return 2 + 2 ;
+   var a = 3 ;
+   var c;
+   var d = 1;
+   c = 5;
+   return a + 1 -2 ;
 }
 
 

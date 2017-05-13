@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from tokenType import TokenType
 class NoValue(Enum):
     def __repr__(self):
         return '<%s.%s>' % (self.__class__.__name__, self.name)
@@ -24,9 +25,7 @@ class Node():
 
 class Program(Node):
     def __init__(self):
-        self.functions = []
-    def addFunction(self,function):
-        self.functions.append(function)
+        self.mainBlock = None
     def getType(self):
         return NodeType.Program
     
@@ -43,8 +42,11 @@ class FunDefinition(Node):
 class StatementBlock(Node):
     def __init__(self):
         self.instructions = []
+        self.functions = []
     def addInstruction(self,node):
           self.instructions.append(node)
+    def addFunction(self,function):
+          self.functions.append(function)
     def getType(self):
         return NodeType.Statement
 
@@ -94,6 +96,9 @@ class Expression(Node):
         return NodeType.Expression
 
 class Variable(Node):
+    def __init__(self):
+        self.name = None
+        self.arg = None
     def setName(self,name):
         self.name = name 
     def setArg(self,arg):
@@ -102,6 +107,9 @@ class Variable(Node):
         return NodeType.Variable 
 
 class Assignment(Node):
+    def __init__(self):
+        self.variable = None
+        self.value = None
     def setVariable(self,variable):
         self.variable = variable 
     def setValue(self,value):
@@ -128,9 +136,9 @@ class Condition(Node):
             self.operation = operation
     def setNegated(self,negated):
             self.negated = True
-    def isNegated():
+    def isNegated(self):
         return self.negated
-    def getLeftSide():
+    def getLeftSide(self):
         return self.operands[0]
     def getType(self): 
         return NodeType.Condition
